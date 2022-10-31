@@ -42,7 +42,7 @@ Preprint will soon be available at bioRxiv.
 In case you are interested, have a look at our previous work:  
 [Exploring prokaryotic transcription, operon structures, rRNA maturation
 and modifications using Nanopore-based native RNA
-sequencing](%22https://www.biorxiv.org/content/10.1101/2019.12.18.880849v2%22).
+sequencing](%22https://www.biorxiv.org/content/10.1101/2019.12.18.880849v2.full%22).
 
 ## What can you find here
 
