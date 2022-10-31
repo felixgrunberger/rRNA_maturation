@@ -8,4 +8,4 @@ has_children: false
 
 ## Get in touch      
 We would like to get in touch you!  
-If you have any questions, feedback or suggestions, we would be happy to start a discussion with you at [GitHub Discussions](https://github.com/felixgrunberger/microbepore/discussions). 
+If you have any questions, feedback or suggestions, we would be happy to start a discussion with you at [GitHub Discussions](https://github.com/felixgrunberger/rRNA_maturation/discussions). 
