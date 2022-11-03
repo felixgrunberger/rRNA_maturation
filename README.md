@@ -2,7 +2,7 @@ Insights into rRNA processing and modifications in Archaea using
 Nanopore-based RNA sequencing
 ================
 <a href="https://orcid.org/0000-0001-7444-2408">Felix
-Grünberger<sup>1</sup></a>, Michael Jüttner,
+Grünberger<sup>1</sup></a>, Michael Jüttner, Robert Knüppel,
 <a href="https://orcid.org/0000-0002-0522-843X">Sébastien
 Ferreira-Cerca<sup>2</sup></a>, and
 <a href="https://orcid.org/0000-0002-0570-2517">Dina
@@ -39,10 +39,10 @@ Development](https://img.shields.io/badge/Maintenance%20Level-Actively%20Develop
 
 Preprint will soon be available at bioRxiv.
 
-In case you are interested, have a look at our previous work:  
-[Exploring prokaryotic transcription, operon structures, rRNA maturation
-and modifications using Nanopore-based native RNA
-sequencing](%22https://www.biorxiv.org/content/10.1101/2019.12.18.880849v2.full%22).
+In case you are interested, have a look at our previous work: [Exploring
+prokaryotic transcription, operon structures, rRNA maturation and
+modifications using Nanopore-based native RNA
+sequencing.](%22https://www.biorxiv.org/content/10.1101/2019.12.18.880849v2.full%22)
 
 ## What can you find here
 
