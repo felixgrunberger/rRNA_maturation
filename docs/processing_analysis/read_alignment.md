@@ -1,7 +1,7 @@
 ---
 layout: page
 title: Read alignment
-parent: Data analysis
+parent: Processing analysis
 nav_order: 3
 ---
 

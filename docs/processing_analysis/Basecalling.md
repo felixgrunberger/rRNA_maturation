@@ -1,7 +1,7 @@
 ---
 layout: page
 title: Basecalling and demultiplexing of raw reads 
-parent: Data analysis
+parent: Processing analysis
 nav_order: 2
 ---
 
