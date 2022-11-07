@@ -17,7 +17,7 @@ If you´re interested you can read our previous pre-print on biorxiv: Exploring 
 
 <br> 
 
-[About the project](project){: .btn .btn-primary .fs-5 .mb-4 .mb-md-0 .mr-2 } [Processing analysis](project){: .btn .btn-primary .fs-5 .mb-4 .mb-md-0 .mr-2 } [Find the code on GitHub](https://github.com/felixgrunberger/rRNA_maturation){: .btn .fs-5 .mb-4 .mb-md-0 }
+[About the project](project){: .btn .btn-primary .fs-5 .mb-4 .mb-md-0 .mr-2 } [Processing analysis](processing_analysis){: .btn .btn-primary .fs-5 .mb-4 .mb-md-0 .mr-2 } [Find the code on GitHub](https://github.com/felixgrunberger/rRNA_maturation){: .btn .fs-5 .mb-4 .mb-md-0 }
 
 
 <br> 

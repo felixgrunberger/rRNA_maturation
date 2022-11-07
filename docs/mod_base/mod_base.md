@@ -2,7 +2,7 @@
 layout: page
 title: Modified base detection
 permalink: /mod_base/
-nav_order: 5
+nav_order: 6
 has_children: true
 ---
 
