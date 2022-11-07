@@ -30,6 +30,9 @@ Nanopore RNA-seq data, including:
         -   <a href="#basecalling-using-guppy"
             id="toc-basecalling-using-guppy">Basecalling using
             <code>guppy</code></a>
+        -   <a href="#polya-trimming-using-cutadapt"
+            id="toc-polya-trimming-using-cutadapt">Poly(A)-trimming using
+            <span>cutadapt</span></a>
     -   <a
         href="#basecalling-demultiplexing-and-trimming-of-direct-cdna-libraries"
         id="toc-basecalling-demultiplexing-and-trimming-of-direct-cdna-libraries">Basecalling,
@@ -111,7 +114,8 @@ files.
 ### Data management
 
 To simplify readability of the following scripts and the Rscripts, the
-folder management is shown in the following:
+folder management is shown in the following (only exemplarily for the
+direct cDNA datasets, direct RNA paths are commented when necessary):
 
 ``` bash
 rRNA_maturation/
@@ -137,16 +141,6 @@ rRNA_maturation/
         ├── adapter_trimmed
         └── trimmed
     ├── genome
-    ├── salmon
-    ├── pychopper
-        ├── normal
-        └── rescued
-    ├── tss
-        ├── raw
-        └── trimmed
-    ├── tts
-        ├── raw
-        └── trimmed
     ├── bed
     └── coverage_data
         ├── raw
@@ -175,14 +169,12 @@ command from the
 [ont_fast5_api](https://github.com/nanoporetech/ont_fast5_api):
 
 ``` bash
-#!/bin/bash
-
 # set input_path, save_path, search in all folders for fast5 files, set number of threads
 multi_to_single_fast5 \
-    --input_path <path folder containing multi_read_fast5 files> \
-    --save_path <path to folder where single_read fast5 files will be output> \
-    --recursive <recursively search sub-directories> \
-    --threads <number of CPU threads to use>
+    --input_path \   # path folder containing multi_read_fast5 files  
+    --save_path \    # path to folder where single_read fast5 files will be output  
+    --recursive \    # recursively search sub-directories  
+    --threads \      # number of CPU threads to use  
 ```
 
 The output will be single-read FAST5 files in the *save_path* folder
@@ -196,17 +188,15 @@ and sequenced together. `Poreplex` can demultiplex the libraries into
 separate folders with:
 
 ``` bash
-#!/bin/bash
-
 # trim adapters, basecall using albacore, de-multiplex, create symbolic fast5 link, increase number of working processes, sort reads to folders according to barcodes
 poreplex \
-    -i <path/to/fast5> \
-    -o <path/to/output> \
-    --trim-adapter <trim 3′ adapter sequences from FASTQ outputs> \
-    --barcoding <sort barcoded reads into separate outputs> \
-    --basecall <call the ONT albacore for basecalling on-the-fly> \
-    --symlink-fast5 <create symbolic links to FAST5 files in output directories even when hard linking is possible> \
-    --parallel <number of worker processes>
+    -i \                 # path/to/fast5   
+    -o \                 # path/to/output
+    --trim-adapter \     # trim 3′ adapter sequences from FASTQ outputs   
+    --barcoding \        # sort barcoded reads into separate outputs
+    --basecall  \        # call the ONT albacore for basecalling on-the-fly  
+    --symlink-fast5 \    # create symbolic links to FAST5 files in output directories even when hard linking is possible
+    --parallel \         # number of worker processes
 ```
 
 Reads can be basecalled automatically during demultiplexing using
@@ -223,33 +213,47 @@ data) using `guppy`, the ONT-developed basecaller (available in the ONT
 Community). We used Version 6.1.3+cc1d765d3 for basecalling of all of
 our reads:
 
-First, multi-read Nanopore files from the MinKNOW output were converted
-to single-read FAST5 files using the ont_fast5_api from Oxford Nanopore
-(<https://github.com/nanoporetech/ont_fast5_api>). Both failed and
-passed read folders were used in the following steps of the analysis.
-Demultiplexing was done by poreplex (version 0.4,
-<https://github.com/hyeshik/poreplex>) with the arguments –trim-adapter,
-–symlink-fast5, –basecall and –barcoding, to trim off adapter sequences
-in output FASTQ files, basecall using albacore, create symbolic links to
-FAST5 files and sort the reads according to their barcodes. However,
-because of major improvements in the basecalling software, albacore
-files were not used. Instead demultiplexed FAST5 reads were basecalled
-using Guppy in high-accuracy mode (Version 6.1.3+cc1d765d3) without
-quality filtering. After basecalling and demultiplexing, artificially
-added polyA sequences were removed from the 3’ ends using cutadapt v4.1
-(-a A{10}, -e 3, -j 0) X.
+``` bash
+guppy_basecaller \
+--input_path ${input} \          # input path    
+--save_path ${output} \          # output path      
+-c rna_r9.4.1_70bps_hac.cfg  \   # high-accuracy DRS config
+--compress_fastq \
+--fast5_out \
+--recursive \
+--progress_stats_frequency 60 \
+-x 'auto'
+```
 
-guppy_basecaller  
-–input_path \${input}  # input path –save_path \${output_DRS}  # output
-path -c rna_r9.4.1_70bps_hac.cfg  # config file: high accuracy RNA
-–calib_detect  # detect calibration spike-in –reverse_sequence true  #
-reverse since sequenced 3´–\>5´ –u_substitution true  # replace U´s with
-T´s –compress_fastq  # compress output –fast5_out  # output FAST5
-–recursive  # look for FAST5 recursively in path
-–progress_stats_frequency 60  # output progress every minute
-–chunks_per_runner 256  # options for Mk1C –gpu_runners_per_device 4  #
-options for Mk1C –num_callers 1  # options for Mk1C -x auto \# options
-for Mk1C
+#### Poly(A)-trimming using [cutadapt](https://cutadapt.readthedocs.io/en/stable/)
+
+After basecalling and demultiplexing, artificially added polyA sequences
+were removed from the 3’ ends using cutadapt v4.1 (-a A{10}, -e 3, -j 0)
+X.
+
+``` bash
+for file in ${ext_dir}/rebasecalling/*/*.fq.gz
+do 
+  filename_extended=${file##*/}
+  filename=${filename_extended%%.*}
+  foldername=$(echo $file | cut -d"/" -f 6)
+  foldername2=$(echo $filename | rev | cut -d"_" -f 1 | rev)
+
+  out_py=${ext_dir}/analysis/cutadapt_fastq/${foldername}
+  mkdir -p ${out_py}
+
+  cutadapt \
+    -a "A{10}" \
+    -e 3 \
+    -j 0 \
+    -o ${out_py}/${foldername}_${foldername2}_cutadapt.fastq \
+    ${file}
+done
+
+# Merge all (WT haloferax and ∆KsgA haloferax)
+cat ${ext_dir}/analysis/cutadapt_fastq/hvo_notex/*.fastq > ${ext_dir}/analysis/cutadapt_fastq/hvo_notex_cut.fastq
+cat ${ext_dir}/analysis/cutadapt_fastq/hvo_notex_dksga/*.fastq > ${ext_dir}/analysis/cutadapt_fastq/hvo_notex_dksga_cut.fastq
+```
 
 ### Basecalling, demultiplexing and trimming of direct cDNA libraries
 
@@ -266,7 +270,7 @@ the fastq_pass 📂.
 ``` bash
 # files
 input=rRNA_maturation/MinKNOW_output
-output_cDNA=rRNA_maturation/rebasecallling
+output_cDNA=rRNA_maturation/rebasecalling
 
 # Basecalling of cDNA files 
 guppy_basecaller \
@@ -288,10 +292,10 @@ guppy_basecaller \
 
 Using the selected options `guppy` produces fast5_pass, fast5_fail,
 fastq_pass, fastq_fail, summary and report files that are written to the
-rebasecallling 📁. Multiple FASTQs can be merged using
+rebasecallling 📂. Multiple FASTQs can be merged using
 `cat rRNA_maturation/rebasecallling/*.fastq > rRNA_maturation/rebasecallling/run_id.fastq`.
 
-Sequencing summary files are also written to the rebasecallling 📁 and
+Sequencing summary files are also written to the rebasecallling 📂 and
 are used during the quality control of the runs and reads. For better
 viewing they can be moved to the analysis/summary 📁 using
 `mv rRNA_maturation/rebasecalling/sequencing_summary.txt rRNA_maturation/analysis/summary/sequencing_summary.txt`
@@ -329,11 +333,11 @@ guppy_barcoder \
 --barcode_kits 'EXP-NBD104' 
 ```
 
-Multiple FASTQs are written to the demultiplexing 📂 and can be merged
+Multiple FASTQs are written to the demultiplexing 📁 and can be merged
 with
 e.g. `cat rRNA_maturation/demultiplexing/pass/barcode01/*.fastq > rRNA_maturation/analysis/fastq_pass/barcode01.fastq`.
 Barcode summary files are written to the rRNA_maturation/demultiplexing
-📂 and can be moved to the rRNA_maturation/analysis/summary 📁.
+📁 and can be moved to the rRNA_maturation/analysis/summary 📁.
 
 #### Read orientation and detection of full-length sequenced reads using [`pychopper`](https://github.com/nanoporetech/pychopper)
 
@@ -404,6 +408,13 @@ done
 ```
 
 ### Read alignment using [`minimap2`](https://github.com/lh3/minimap2)
+
+Direct RNA and direct cDNA reads were mapped using minimap2 (v.
+2.24-r1122) with standard parameters suggested for the alignment of
+noisy direct RNA reads (-ax splice -uf -k14) and Nanopore genomic reads
+(-max map-ont), respectively. In each case, –MD tag was used to include
+the MD tag for calculating mapping identities. Alignment files were
+converted to BAM files, sorted and indexed using samtools (v.1.15.1).
 
 Files were mapped to the reference genome from *Escherichia coli* K-12
 MG1655 ([GenBank](https://www.ncbi.nlm.nih.gov/nuccore/545778205):
