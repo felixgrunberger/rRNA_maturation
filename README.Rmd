@@ -60,8 +60,8 @@ are based on custom [Rscripts](Rscripts).
 
 ## Data availability  
 ### Sequencing files in original FAST5 format   
-Sequencing files XXX
-
+Raw direct RNA data (gzipped raw FAST5 files) have been uploaded to the Sequence Read Archive (SRA) and are available under project accession number [PRJNA632538](https://www.ncbi.nlm.nih.gov/sra/?term=PRJNA632538) (WT run: SRR11991303, ∆KsgA run: SRR11991308).   
+Raw direct cDNA data are available at the European Nucleotide Archive (ENA) under accession number .
 
 ### Basecalled and demultiplexed FASTQ files  
 For easier access, basecalled & demultiplexed FASTQ files are available 

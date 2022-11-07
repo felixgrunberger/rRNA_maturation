@@ -24,13 +24,27 @@ Nanopore RNA-seq data, including:
         href="#basecalling-demultiplexing-and-trimming-of-direct-rna-libraries"
         id="toc-basecalling-demultiplexing-and-trimming-of-direct-rna-libraries">Basecalling,
         demultiplexing and trimming of direct RNA libraries</a>
+        -   <a href="#demulitplexing-using-poreplex"
+            id="toc-demulitplexing-using-poreplex">Demulitplexing using
+            <span><code>poreplex</code></span></a>
+        -   <a href="#basecalling-using-guppy"
+            id="toc-basecalling-using-guppy">Basecalling using
+            <code>guppy</code></a>
     -   <a
         href="#basecalling-demultiplexing-and-trimming-of-direct-cdna-libraries"
         id="toc-basecalling-demultiplexing-and-trimming-of-direct-cdna-libraries">Basecalling,
         demultiplexing and trimming of direct cDNA libraries</a>
-    -   <a href="#demultiplexing-of-basecalled-reads-using-guppy_barcoder"
-        id="toc-demultiplexing-of-basecalled-reads-using-guppy_barcoder">Demultiplexing
-        of basecalled reads using <code>guppy_barcoder</code></a>
+        -   <a href="#basecalling-using-guppy-1"
+            id="toc-basecalling-using-guppy-1">Basecalling using
+            <code>guppy</code></a>
+        -   <a href="#demultiplexing-of-basecalled-reads-using-guppy_barcoder"
+            id="toc-demultiplexing-of-basecalled-reads-using-guppy_barcoder">Demultiplexing
+            of basecalled reads using <code>guppy_barcoder</code></a>
+        -   <a
+            href="#read-orientation-and-detection-of-full-length-sequenced-reads-using-pychopper"
+            id="toc-read-orientation-and-detection-of-full-length-sequenced-reads-using-pychopper">Read
+            orientation and detection of full-length sequenced reads using
+            <span><code>pychopper</code></span></a>
     -   <a href="#read-alignment-using-minimap2"
         id="toc-read-alignment-using-minimap2">Read alignment using
         <span><code>minimap2</code></span></a>
@@ -101,6 +115,7 @@ folder management is shown in the following:
 
 ``` bash
 rRNA_maturation/
+└── MinKNOW_output
 └── rebasecallling/
     ├── sequencing_summary.txt
     ├── pass
@@ -111,13 +126,12 @@ rRNA_maturation/
     └── fail
 └── analysis/
     ├── fastq_pass
-    ├── FASTQ
-        ├── normal
-        ├── full_length
-        ├── cutadapt
-        └── cutadapt_SSP
+    ├── fastq_pass_fl
     ├── summary
-    ├── barcode
+    ├── pychopper_edlib
+    ├── pychopper_edlib_rescue
+    
+    
     ├── mapped
         ├── raw
         ├── adapter_trimmed
@@ -141,10 +155,108 @@ rRNA_maturation/
 
 ### Basecalling, demultiplexing and trimming of direct RNA libraries
 
+#### Demulitplexing using [`poreplex`](https://github.com/hyeshik/poreplex)
+
+Before starting a sequencing run, different running options can be
+selected in MinKNOW. In case reads are stored in multi-FAST5-containing
+files (e.g. 4000 reads per file), files can be converted to single-read
+FAST5 files using the
+[ont_fast5_api](https://github.com/nanoporetech/ont_fast5_api), as some
+workflows
+(e.g. [`nanopolish`](https://nanopolish.readthedocs.io/en/latest/) and
+[`tombo`](https://nanoporetech.github.io/tombo/)) rely on single-FAST5
+files for further analysis.  
+After a run, reads are stored in two folders (*fast5_failed*,
+*fast5_passed*). To prevent actual good reads from beeing discarded we
+**included all reads from both folders** in the following steps of the
+analysis.  
+First, we converted multi-FAST5-files with the `multi_to_single_fast5`
+command from the
+[ont_fast5_api](https://github.com/nanoporetech/ont_fast5_api):
+
+``` bash
+#!/bin/bash
+
+# set input_path, save_path, search in all folders for fast5 files, set number of threads
+multi_to_single_fast5 \
+    --input_path <path folder containing multi_read_fast5 files> \
+    --save_path <path to folder where single_read fast5 files will be output> \
+    --recursive <recursively search sub-directories> \
+    --threads <number of CPU threads to use>
+```
+
+The output will be single-read FAST5 files in the *save_path* folder
+with one subfolder per multi-read input file.
+
+Multiplexed libraries (*how to* is described here:
+<https://github.com/hyeshik/poreplex>) can be demultiplexed using
+[`poreplex`](https://github.com/hyeshik/poreplex). Following this
+approach four direct RNA sequencing libraries can be barcoded, pooled
+and sequenced together. `Poreplex` can demultiplex the libraries into
+separate folders with:
+
+``` bash
+#!/bin/bash
+
+# trim adapters, basecall using albacore, de-multiplex, create symbolic fast5 link, increase number of working processes, sort reads to folders according to barcodes
+poreplex \
+    -i <path/to/fast5> \
+    -o <path/to/output> \
+    --trim-adapter <trim 3′ adapter sequences from FASTQ outputs> \
+    --barcoding <sort barcoded reads into separate outputs> \
+    --basecall <call the ONT albacore for basecalling on-the-fly> \
+    --symlink-fast5 <create symbolic links to FAST5 files in output directories even when hard linking is possible> \
+    --parallel <number of worker processes>
+```
+
+Reads can be basecalled automatically during demultiplexing using
+`albacore`, the outdated basecaller of ONT. As `albacore` is meanwhile
+outdated for a long time, we chose to only sort the reads based on
+`poreplex` and used `guppy` (Version 6.1.3+cc1d765d3) for basecalling in
+high-accuracy mode. In this case the `poreplex` can be shortened to:
+`poreplex -i <input> -o <output> --barcoding --parallel`.
+
+#### Basecalling using `guppy`
+
+Demultiplexed raw FAST5 files can be basecalled (*translated* in FASTQ
+data) using `guppy`, the ONT-developed basecaller (available in the ONT
+Community). We used Version 6.1.3+cc1d765d3 for basecalling of all of
+our reads:
+
+First, multi-read Nanopore files from the MinKNOW output were converted
+to single-read FAST5 files using the ont_fast5_api from Oxford Nanopore
+(<https://github.com/nanoporetech/ont_fast5_api>). Both failed and
+passed read folders were used in the following steps of the analysis.
+Demultiplexing was done by poreplex (version 0.4,
+<https://github.com/hyeshik/poreplex>) with the arguments –trim-adapter,
+–symlink-fast5, –basecall and –barcoding, to trim off adapter sequences
+in output FASTQ files, basecall using albacore, create symbolic links to
+FAST5 files and sort the reads according to their barcodes. However,
+because of major improvements in the basecalling software, albacore
+files were not used. Instead demultiplexed FAST5 reads were basecalled
+using Guppy in high-accuracy mode (Version 6.1.3+cc1d765d3) without
+quality filtering. After basecalling and demultiplexing, artificially
+added polyA sequences were removed from the 3’ ends using cutadapt v4.1
+(-a A{10}, -e 3, -j 0) X.
+
+guppy_basecaller  
+–input_path \${input}  # input path –save_path \${output_DRS}  # output
+path -c rna_r9.4.1_70bps_hac.cfg  # config file: high accuracy RNA
+–calib_detect  # detect calibration spike-in –reverse_sequence true  #
+reverse since sequenced 3´–\>5´ –u_substitution true  # replace U´s with
+T´s –compress_fastq  # compress output –fast5_out  # output FAST5
+–recursive  # look for FAST5 recursively in path
+–progress_stats_frequency 60  # output progress every minute
+–chunks_per_runner 256  # options for Mk1C –gpu_runners_per_device 4  #
+options for Mk1C –num_callers 1  # options for Mk1C -x auto \# options
+for Mk1C
+
 ### Basecalling, demultiplexing and trimming of direct cDNA libraries
 
+#### Basecalling using `guppy`
+
 After sequencing (and despite live-basecalling) all datasets in the
-raw_FAST5 📂 were re-basecalled using `guppy` (v. 6.3.2+bb5453e) in
+raw_FAST5 📁 were re-basecalled using `guppy` (v. 6.3.2+bb5453e) in
 high-accuracy mode with a q-score cutoff of 7. Next, basecalled files
 were demultiplexed using the `guppy_barcoder` command from the `guppy`
 suite (available in the [ONT community](https://nanoporetech.com) using
@@ -153,40 +265,20 @@ the fastq_pass 📂.
 
 ``` bash
 # files
-input=rRNA_maturation/rebasecallling
-output_DRS=microbepore/data/FASTQ/normal/run_id # add run id
-output_cDNA=microbepore/data/basecalled/run_id # add run id
-
-# Basecalling of DRS files
-guppy_basecaller \
---input_path ${input} \ # input path
---save_path ${output_DRS} \ # output path
--c rna_r9.4.1_70bps_hac.cfg  \ # config file: high accuracy RNA
---calib_detect \ # detect calibration spike-in
---reverse_sequence true \ # reverse since sequenced 3´-->5´
---u_substitution true \ # replace U´s with T´s
---compress_fastq \ # compress output
---fast5_out \ # output FAST5
---recursive \ # look for FAST5 recursively in path
---progress_stats_frequency 60 \ # output progress every minute
---chunks_per_runner 256 \ # options for Mk1C
---gpu_runners_per_device 4 \ # options for Mk1C
---num_callers 1 \ # options for Mk1C
--x auto # options for Mk1C
+input=rRNA_maturation/MinKNOW_output
+output_cDNA=rRNA_maturation/rebasecallling
 
 # Basecalling of cDNA files 
 guppy_basecaller \
---input_path ${input} \
---save_path ${output_cDNA} \
--c dna_r9.4.1_450bps_hac.cfg \ # config file: high accuracy cDNA 
---compress_fastq \
---fast5_out \
---recursive \
---progress_stats_frequency 60 \
---chunks_per_runner 256 \
---gpu_runners_per_device 4 \
---num_callers 1 \
--x auto
+--input_path ${input} \          # input path
+--save_path ${output_cDNA} \     # output path
+-c dna_r9.4.1_450bps_hac.cfg \   # config file: high accuracy cDNA 
+--compress_fastq \               # compress output
+--fast5_out \                    # output FAST5
+--min_qscore 7 \                 # qscore cutoff
+--recursive \                    # look for FAST5 recursively in path
+--progress_stats_frequency 60 \  # output progress every minute
+-x auto                          # automatic detection of GPUs
 ```
 
 > DRS & cDNA runs require different options.  
@@ -194,40 +286,122 @@ guppy_basecaller \
 > library preparation kit are listed with
 > `guppy_basecaller --print_workflows`
 
-With the selected options `guppy` produces fast5_pass, fast5_fail,
-fastq, summary and report files that are written to the FASTQ 📁. FASTQ
-are not grouped in pass and fail groups since `--min_qscore` is not
-enabled. Multiple FASTQs can be merged using
-`cat microbepore/data/basecalled/run_id/*.fastq > microbepore/data/basecalled/run_id/run_id.fastq`.
+Using the selected options `guppy` produces fast5_pass, fast5_fail,
+fastq_pass, fastq_fail, summary and report files that are written to the
+rebasecallling 📁. Multiple FASTQs can be merged using
+`cat rRNA_maturation/rebasecallling/*.fastq > rRNA_maturation/rebasecallling/run_id.fastq`.
 
-Sequencing summary files are also written to the FASTQ 📂 and are used
-during the quality control of the runs and reads. For better viewing
-they can be moved to the summary 📂 using
-`mv microbepore/data/FASTQ/run_id/sequencing_summary.txt microbepore/data/summary/run_id.txt`
+Sequencing summary files are also written to the rebasecallling 📁 and
+are used during the quality control of the runs and reads. For better
+viewing they can be moved to the analysis/summary 📁 using
+`mv rRNA_maturation/rebasecalling/sequencing_summary.txt rRNA_maturation/analysis/summary/sequencing_summary.txt`
 
-### Demultiplexing of basecalled reads using `guppy_barcoder`
+#### Demultiplexing of basecalled reads using `guppy_barcoder`
 
 Next, multiplexed cDNA libraries are demultiplexed in a separate step
-using `guppy_barcoder`.
+using `guppy_barcoder` (v. 6.3.2+bb5453e) in default mode (barcode kit
+EXP-NBD104).
 
 ``` bash
 # files
-input=microbepore/data/basecalled/run_id # add run id
-output=microbepore/data/FASTQ/normal/run_id # add run id
+input=rRNA_maturation/rebasecallling
+output=rRNA_maturation/demultiplexing
 
-# Demultiplexing of (PCR-)cDNA files
+# Demultiplexing of cDNA files   
+## fail folder 
 guppy_barcoder \
---input_path ${input} \
---save_path ${output} \
---config configuration.cfg \
---barcode_kits SQK-PCB109 \
---progress_stats_frequency 60
+--input_path $input/fail \
+--save_path $output/fail \
+--recursive \
+--progress_stats_frequency 60 \
+-x 'auto' \
+--compress_fastq \
+--barcode_kits 'EXP-NBD104' 
+
+## pass folder 
+guppy_barcoder \
+--input_path $input/pass \
+--save_path $output/pass \
+--recursive \
+--progress_stats_frequency 60 \
+-x 'auto' \
+--compress_fastq \
+--barcode_kits 'EXP-NBD104' 
 ```
 
-Multiple FASTQs are written to the FASTQ 📂 and can be merged with
-e.g. `cat microbepore/data/FASTQ/run_id/barcode01/*.fastq > microbepore/data/FASTQ/run_id/run_id_barcode01.fastq`.
-Barcode summary files are written to the FASTQ 📁 and can be moved to
-the barcode 📁.
+Multiple FASTQs are written to the demultiplexing 📂 and can be merged
+with
+e.g. `cat rRNA_maturation/demultiplexing/pass/barcode01/*.fastq > rRNA_maturation/analysis/fastq_pass/barcode01.fastq`.
+Barcode summary files are written to the rRNA_maturation/demultiplexing
+📂 and can be moved to the rRNA_maturation/analysis/summary 📁.
+
+#### Read orientation and detection of full-length sequenced reads using [`pychopper`](https://github.com/nanoporetech/pychopper)
+
+Full-length cDNA reads containing SSP (TTTCTGTTGGTGCTGATATTGCTGGG) and
+custom VNP primers (ACTTGCCTGTCGCTCTATCTTCATTGATGGTGCCTACAG) in the
+correct orientation were identified using `pychopper` (v.2.5.0) with
+standard parameters using the edlib backend and autotuned cutoff
+parameters estimated from subsampled data.  
+\> Note that a custom primer fasta file was created as described in
+<https://github.com/epi2me-labs/pychopper>
+
+Additionally, protocol-specific read rescue was performed using the
+DCS109-specific command in pychopper. All full-length detected reads
+were merged and used for subsequent steps. The output is saved in
+pychopper_edlib 📁.
+
+``` bash
+# files
+ext_dir=rRNA_maturation
+
+# perform pychopper for all cDNA files
+for file in ${ext_dir}/analysis/fastq_pass/*/*.fq
+do 
+  filename_extended=${file##*/}
+  filename=${filename_extended%%.*}
+
+  echo ${filename} pychopper edlib started ...
+
+  out_py=${ext_dir}/analysis/pychopper_edlib/${filename}
+  mkdir -p ${out_py}
+  
+  pychopper \
+  -m edlib \
+  -b pychopper_custom.fasta \
+  -r ${out_py}/${filename}_report.pdf \
+  -t 8 \
+  -u ${out_py}/${filename}_unclassified.fastq \
+  -w ${out_py}/${filename}_rescued.fastq \
+  -S ${out_py}/${filename}_stats.txt \
+  ${file} \
+  ${out_py}/${filename}_full_length.fastq
+
+  # After a first round, a second round of `pychopper` was applied to the unclassified direct cDNA reads with DCS-specific read rescue enabled. 
+  echo ${filename} DCS109 specific rescue started ...
+  out_py2=${ext_dir}/analysis/pychopper_edlib_rescue/${filename}
+  mkdir -p ${out_py2}
+  
+  pychopper \
+  -x DCS109 \
+  -b pychopper_custom.fasta \
+  -r ${out_py2}/${filename}_report.pdf \
+  -t 8 \
+  -m edlib \
+  -u ${out_py2}/${filename}_unclassified.fastq \
+  -w ${out_py2}/${filename}_rescued.fastq \
+  -S ${out_py2}/${filename}_stats.txt \
+  ${out_py}/${filename}_unclassified.fastq \
+  ${out_py2}/${filename}_full_length.fastq
+  
+  echo ${filename} files are merged ...
+  out_py3=${ext_dir}/analysis/fastq_pass_fl/${filename}
+  mkdir -p ${out_py3}
+  
+  # finally, all fl files are merged
+  cat ${out_py}/${filename}_full_length.fastq ${out_py2}/${filename}_full_length.fastq > ${out_py3}/${filename}_full_length.fastq
+
+done
+```
 
 ### Read alignment using [`minimap2`](https://github.com/lh3/minimap2)
 
@@ -250,13 +424,13 @@ FASTQ files were remapped to a transcriptome file using `minimap2` with
 the previously mentioned parameters to assign single read names with
 feature IDs. The transcript file was made using
 [`gffread`](https://github.com/gpertea/gffread) with
-`gffread microbepore/data/genome/NC_000913.3.gff -g microbepore/data/genome/NC_000913.3.fasta -w microbepore/data/genome/NC_000913.3.transcripts.fasta`.
+`gffread rRNA_maturation/data/genome/NC_000913.3.gff -g rRNA_maturation/data/genome/NC_000913.3.fasta -w rRNA_maturation/data/genome/NC_000913.3.transcripts.fasta`.
 
 ``` bash
 # files
-input=microbepore/data/FASTQ/normal # input directory with all merged FASTQ files, 1 for each barcode or single DRS run
-fasta=microbepore/data/genome/NC_000913.3.fasta # downloaded from GenBank
-transcripts=microbepore/data/genomeNC_000913.3.transcripts.fasta # transcripts file made using gffread
+input=rRNA_maturation/data/FASTQ/normal # input directory with all merged FASTQ files, 1 for each barcode or single DRS run
+fasta=rRNA_maturation/data/genome/NC_000913.3.fasta # downloaded from GenBank
+transcripts=rRNA_maturation/data/genomeNC_000913.3.transcripts.fasta # transcripts file made using gffread
 
 # Mapping & Remapping - loop through all FASTQs
 for file in ${input}/*/*.fastq
@@ -268,9 +442,9 @@ do
   filename=${f_ex%%.*}
   
   # make directories
-  mkdir microbepore/data/mapped/raw # direct output to mapped folder for raw reads
-  mkdir microbepore/data/mapped/raw/${foldername} # run_id
-  output=microbepore/data/mapped/raw/${foldername}/${filename} # run_id/barcode_id
+  mkdir rRNA_maturation/data/mapped/raw # direct output to mapped folder for raw reads
+  mkdir rRNA_maturation/data/mapped/raw/${foldername} # run_id
+  output=rRNA_maturation/data/mapped/raw/${foldername}/${filename} # run_id/barcode_id
   mkdir ${output}
 
   if [[ $filename =~ "RNA" ]]; 
@@ -319,7 +493,7 @@ parameters estimated from subsampled data. Save output in pychopper 📁.
 
 ``` bash
 # files
-input=microbepore/data/FASTQ/normal # input directory with all merged FASTQ files, 1 for each barcode or single DRS run
+input=rRNA_maturation/data/FASTQ/normal # input directory with all merged FASTQ files, 1 for each barcode or single DRS run
 
 # perform pychopper for all cDNA and (PCR)-cDNA files
 for file in ${input}/*/*.fastq
@@ -331,9 +505,9 @@ do
   filename=${f_ex%%.*}
   
   # make directories
-  mkdir microbepore/data/pychopper/normal
-  mkdir microbepore/data/pychopper/normal/${foldername}
-  output=microbepore/data/pychopper/normal/${foldername}/${filename}
+  mkdir rRNA_maturation/data/pychopper/normal
+  mkdir rRNA_maturation/data/pychopper/normal/${foldername}
+  output=rRNA_maturation/data/pychopper/normal/${foldername}/${filename}
   mkdir ${output}
 
   # perform pychopper using precomputed q
@@ -353,7 +527,7 @@ unclassified direct cDNA reads with DCS-specific read rescue enabled.
 
 ``` bash
 # files
-input=microbepore/data/pychopper/normal # input directory with all merged FASTQ files, 1 for each barcode or single DRS run
+input=rRNA_maturation/data/pychopper/normal # input directory with all merged FASTQ files, 1 for each barcode or single DRS run
 
 # perform pychopper using the -x rescue option for DCS files
 for file in ${input}/*unclassified.fastq # only use unclassified reads from first round as input
@@ -367,7 +541,7 @@ do
   # make directories
   mkdir ${dir}/data/pychopper/rescued
   mkdir ${dir}/data/pychopper/rescued/${foldername}
-  output=microbepore/data/pychopper/rescued/${foldername}/${filename}
+  output=rRNA_maturation/data/pychopper/rescued/${foldername}/${filename}
   mkdir ${output}
   
   # perfrom pychopper using -X option for native cDNA datasets
@@ -388,7 +562,7 @@ subsequent steps.
 
 ``` bash
 # files
-input=microbepore/data/pychopper/
+input=rRNA_maturation/data/pychopper/
 
 # merge all full-length and rescued reads as full-length
 for file in ${input}/normal/*/*/*full_length_output.fastq # both normal and rescued folders
@@ -399,9 +573,9 @@ do
 
   keyword=$(echo $foldername | cut -d"_" -f 2) # get libary kit ID
   
-  mkdir microbepore/data/FASTQ/full_length
-  mkdir microbepore/data/FASTQ/full_length/${foldername}
-  output=microbepore/data/FASTQ/full_length/${foldername}/${filename}
+  mkdir rRNA_maturation/data/FASTQ/full_length
+  mkdir rRNA_maturation/data/FASTQ/full_length/${foldername}
+  output=rRNA_maturation/data/FASTQ/full_length/${foldername}/${filename}
   mkdir ${output}
   
   if [[ $keyword =~ "PCB109" ]]; then
@@ -415,7 +589,7 @@ done
 ```
 
 For easier handling in the subsequent steps, DRS FASTQ files are also
-moved to the microbepore/data/FASTQ/full_length folder and adding
+moved to the rRNA_maturation/data/FASTQ/full_length folder and adding
 \*\_full_length_all\* to the filename.
 
 #### Remove polyA-tails using [`cutadapt`](https://cutadapt.readthedocs.io/en/stable/)
@@ -427,7 +601,7 @@ To this end, polyA sequences were removed from the 3´ends:
 
 ``` bash
 # files
-input=microbepore/data/FASTQ/full_length # input directory with all merged FASTQ files, 1 for each barcode or single DRS run
+input=rRNA_maturation/data/FASTQ/full_length # input directory with all merged FASTQ files, 1 for each barcode or single DRS run
 
 for file in ${input}/*/*/*_full_length_all.fastq
 do 
@@ -438,9 +612,9 @@ do
   foldername=$(echo $filename_extended | cut -d"_" -f 1,2,3)
   filename=${filename_extended%%.*}
   
-  mkdir microbepore/data/FASTQ/cutadapt
-  mkdir microbepore/data/FASTQ/cutadapt/${foldername}
-  output=microbepore/data/FASTQ/cutadapt/${foldername}/${filename}
+  mkdir rRNA_maturation/data/FASTQ/cutadapt
+  mkdir rRNA_maturation/data/FASTQ/cutadapt/${foldername}
+  output=rRNA_maturation/data/FASTQ/cutadapt/${foldername}/${filename}
   mkdir ${output}
   
   # cutadapt
@@ -458,7 +632,7 @@ done
 Remove remaining SSP sequences from the 5´ends of the cDNA reads using:
 
 ``` bash
-input=microbepore/data/FASTQ/cutadapt
+input=rRNA_maturation/data/FASTQ/cutadapt
 
 # >  SSP adapter
 for file in ${input}/*/*/*cutadapt.fastq
@@ -468,9 +642,9 @@ do
   foldername=$(echo $filename_extended | cut -d"_" -f 1,2,3)
   filename=${filename_extended%%.*}
   
-  mkdir microbepore/data/FASTQ/cutadapt_SSP
-  mkdir microbepore/data/FASTQ/cutadapt_SSP/${foldername}
-  output=microbepore/data/FASTQ/cutadapt_SSP/${foldername}/${filename}
+  mkdir rRNA_maturation/data/FASTQ/cutadapt_SSP
+  mkdir rRNA_maturation/data/FASTQ/cutadapt_SSP/${foldername}
+  output=rRNA_maturation/data/FASTQ/cutadapt_SSP/${foldername}/${filename}
   mkdir ${output}
 
   cutadapt \
@@ -492,8 +666,8 @@ the alignments using [`samclip`](https://github.com/tseemann/samclip)
 1.  Step: Align
 
 ``` bash
-input=microbepore/data/FASTQ/cutadapt_SSP
-fasta=microbepore/data/genome/NC_000913.3.fasta # downloaded from GenBank
+input=rRNA_maturation/data/FASTQ/cutadapt_SSP
+fasta=rRNA_maturation/data/genome/NC_000913.3.fasta # downloaded from GenBank
 
 # map (pychopper) > polyA_trimmed > SSP trimmed fastqs
 for file in ${input}/*/*/*fastq
@@ -502,9 +676,9 @@ do
   foldername=$(echo ${filename_extended} | cut -d"_" -f 1,2,3)
   filename=${filename_extended%%.*}
 
-  mkdir microbepore/data/mapped/adapter_trimmed
-  mkdir microbepore/data/mapped/adapter_trimmed/${foldername}
-  output=microbepore/data/mapped/adapter_trimmed/${foldername}/${filename}
+  mkdir rRNA_maturation/data/mapped/adapter_trimmed
+  mkdir rRNA_maturation/data/mapped/adapter_trimmed/${foldername}
+  output=rRNA_maturation/data/mapped/adapter_trimmed/${foldername}/${filename}
   mkdir ${output}
 
   ## align using minimap2
@@ -521,9 +695,9 @@ done
 2.  Step: Remove clipping \> 10 bases
 
 ``` bash
-input=microbepore/data/mapped/adapter_trimmed
-fasta=microbepore/data/genome/NC_000913.3.fasta # downloaded from GenBank
-transcripts=microbepore/data/genomeNC_000913.3.transcripts.fasta # transcripts file made using gffread
+input=rRNA_maturation/data/mapped/adapter_trimmed
+fasta=rRNA_maturation/data/genome/NC_000913.3.fasta # downloaded from GenBank
+transcripts=rRNA_maturation/data/genomeNC_000913.3.transcripts.fasta # transcripts file made using gffread
 
 # remove reads with more than 10 bases that are clipped on either side. 
 for file in ${input}/*/*/*.sam
@@ -538,9 +712,9 @@ do
     echo ${filename}
     echo ${keyword}
     
-    mkdir microbepore/data/mapped/trimmed
-    mkdir microbepore/data/mapped/trimmed/${foldername}
-    output=microbepore/data/mapped/trimmed/${foldername}/${filename}
+    mkdir rRNA_maturation/data/mapped/trimmed
+    mkdir rRNA_maturation/data/mapped/trimmed/${foldername}
+    output=rRNA_maturation/data/mapped/trimmed/${foldername}/${filename}
     mkdir ${output}
   
     # remove mapped reads with a Maximum clip length to allow (10, 5 is default)
@@ -597,7 +771,7 @@ counts for each position using `bedtools intersect`.
 5´end peak calling was performed in the following way:
 
 ``` bash
-input=microbepore/data/mapped
+input=rRNA_maturation/data/mapped
 
 # perform tss detection for pychopper auto > cutadapt_polyA > SSP-cutadapt > clipped  or for raw mapped reads
 for file in ${input}/trimmed/*/*/*clipped.sorted.bam # ||  for file in ${input}/raw/*/*/*.sorted.bam
@@ -609,9 +783,9 @@ do
   filename=${filename_extended%%.*}
   
   # make directories
-  mkdir microbepore/data/tss/trimmed
-  mkdir microbepore/data/tss/trimmed/${foldername}
-  output=microbepore/data/tss/trimmed/${foldername}/${filename}
+  mkdir rRNA_maturation/data/tss/trimmed
+  mkdir rRNA_maturation/data/tss/trimmed/${foldername}
+  output=rRNA_maturation/data/tss/trimmed/${foldername}/${filename}
   mkdir ${output}
 
   # step 1: calculate 5´positions for plus and minus strand
@@ -652,7 +826,7 @@ done
 3´end peak calling was performed in the following way:
 
 ``` bash
-input=microbepore/data/mapped
+input=rRNA_maturation/data/mapped
 
 # perform tts detection for pychopper auto > cutadapt_polyA > SSP-cutadapt > clipped  or for raw mapped reads
 for file in ${input}/trimmed/*/*/*clipped.sorted.bam # ||  for file in ${input}/raw/*/*/*.sorted.bam
@@ -664,10 +838,10 @@ do
     
   echo ${filename}
 
-  mkdir microbepore/data/tts/trimmed
-  mkdir microbepore/data/tts/trimmed
-  mkdir microbepore/data/tts/trimmed/${foldername}
-  output=microbepore/data/tts/trimmed/${foldername}/${filename}
+  mkdir rRNA_maturation/data/tts/trimmed
+  mkdir rRNA_maturation/data/tts/trimmed
+  mkdir rRNA_maturation/data/tts/trimmed/${foldername}
+  output=rRNA_maturation/data/tts/trimmed/${foldername}/${filename}
   mkdir ${output}
 
   # step 1: calculate 3´positions for plus and minus strand
@@ -713,7 +887,7 @@ from the BAM files and coverage analysis performed using a custom R
 script.
 
 ``` bash
-input=microbepore/data/mapped
+input=rRNA_maturation/data/mapped
 
 # calculate coverage over transcripts with TSS and TTS | for pychopper auto > cutadapt > clipped or RAW 
 for file in ${input}/trimmed/*/*/*clipped.sorted.bam # ||  for file in ${input}/raw/*/*/*.sorted.bam
@@ -724,9 +898,9 @@ do
   filename=${filename_extended%%.*}
 
   # mk dirs
-  mkdir microbepore/data/coverage/trimmed
-  mkdir microbepore/data/coverage/trimmed/${foldername}
-  output=microbepore/data/coverage/trimmed/${foldername}/${filename}
+  mkdir rRNA_maturation/data/coverage/trimmed
+  mkdir rRNA_maturation/data/coverage/trimmed/${foldername}
+  output=rRNA_maturation/data/coverage/trimmed/${foldername}/${filename}
   mkdir ${output}
 
   # calc coverage
