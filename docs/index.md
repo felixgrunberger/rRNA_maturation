@@ -17,7 +17,6 @@ If you´re interested you can read our previous pre-print on biorxiv: Exploring 
 
 <br> 
 
-Choose:
 [Processing analysis](processing_analysis){: .btn .btn-primary .fs-5 .mb-4 .mb-md-0 .mr-2 } [Modified base detection](mod_base){: .btn .btn-pink .fs-5 .mb-4 .mb-md-0 .mr-2 } [Find the code on GitHub](https://github.com/felixgrunberger/rRNA_maturation){: .btn .fs-5 .mb-4 .mb-md-0 }
 
 

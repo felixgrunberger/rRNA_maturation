@@ -16,6 +16,7 @@ github_username:  felixgrunberger
 # Build settings
 #theme: minima
 remote_theme: pmarsceill/just-the-docs
+color_scheme: custom  
 plugins:
   - jekyll-feed
 
