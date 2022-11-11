@@ -61,7 +61,8 @@ are based on custom [Rscripts](Rscripts).
 ## Data availability  
 Raw direct RNA data (gzipped raw FAST5 files) have been uploaded to the Sequence Read Archive (SRA) and are available under project accession number [PRJNA632538](https://www.ncbi.nlm.nih.gov/sra/?term=PRJNA632538) (WT run: SRR11991303, ∆KsgA run: SRR11991308).  
 Direct cDNA data are available at the European Nucleotide Archive (ENA, https://www.ebi.ac.uk/ena) under project accession number PRJEB57168.
-
+ERP142133
+ERR10466882
 ### Mapped BAM files  
 Minimap2-mapped untrimmed reads are also available 
 
