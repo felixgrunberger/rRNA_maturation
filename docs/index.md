@@ -11,10 +11,11 @@ permalink: /
 
 --- 
 
-{: .fs-6 .fw-300 } 
-Here we describe tools and custom R scripts to analyse rRNA processing and modifcation in Archaea using Nanopore-based direct cDNA and direct RNA sequencing.    
-If you´re interested you can read our previous pre-print on biorxiv: Exploring prokaryotic transcription, operon structures, rRNA maturation and modifications using [Nanopore-based native RNA sequencing](https://www.biorxiv.org/content/10.1101/2019.12.18.880849v2)
-{: .fs-6 .fw-300 } 
+{: .fs-5 .fw-300 } 
+Here we describe tools and custom R scripts to analyse rRNA processing and modification in Archaea using Nanopore-based direct cDNA and direct RNA sequencing.    
+If you´re interested you can read our previous pre-print on biorxiv:  
+[Exploring prokaryotic transcription, operon structures, rRNA maturation and modifications using Nanopore-based native RNA sequencing](https://www.biorxiv.org/content/10.1101/2019.12.18.880849v2).
+{: .fs-5 .fw-300 } 
 
 <br> 
 

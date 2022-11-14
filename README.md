@@ -31,9 +31,9 @@ The repository is currently actively developed.
 [![Active
 Development](https://img.shields.io/badge/Maintenance%20Level-Actively%20Developed-brightgreen.svg)](https://gist.github.com/cheerfulstoic/d107229326a01ff0f333a1d3476e068d)
 
-## Full documentation here
-
-<https://felixgrunberger.github.io/rRNA_maturation/>
+<!--## Full documentation here  
+https://felixgrunberger.github.io/rRNA_maturation/
+-->
 
 ## Preprint
 
@@ -55,7 +55,8 @@ Downstream analysis, including
 intermediates  
 - Circular RNA detection  
 - Modified base detection  
-are based on custom [Rscripts](Rscripts).
+are based on custom Rscripts that are also described in the
+[pipeline](pipeline) section.
 
 ## Data availability
 
@@ -65,10 +66,7 @@ number [PRJNA632538](https://www.ncbi.nlm.nih.gov/sra/?term=PRJNA632538)
 (WT run: SRR11991303, ∆KsgA run: SRR11991308).  
 Direct cDNA data are available at the European Nucleotide Archive (ENA,
 <https://www.ebi.ac.uk/ena>) under project accession number PRJEB57168.
-
-### Mapped BAM files
-
-Minimap2-mapped untrimmed reads are also available
+ERP142133 ERR10466882
 
 ------------------------------------------------------------------------
 
@@ -76,5 +74,3 @@ Minimap2-mapped untrimmed reads are also available
 
 This project is under the general MIT License - see the
 [LICENSE](LICENSE) file for details
-
-## References
