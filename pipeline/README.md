@@ -280,12 +280,12 @@ guppy_basecaller \
 
 Using the selected options `guppy` produces fast5_pass, fast5_fail,
 fastq_pass, fastq_fail, summary and report files that are written to the
-rebasecallling 📁. Multiple FASTQs can be merged using
+rebasecallling 📂. Multiple FASTQs can be merged using
 `cat rRNA_maturation/rebasecallling/*.fastq > rRNA_maturation/rebasecallling/run_id.fastq`.
 
-Sequencing summary files are also written to the rebasecallling 📂 and
+Sequencing summary files are also written to the rebasecallling 📁 and
 are used during the quality control of the runs and reads. For better
-viewing they can be moved to the analysis/summary 📂 using
+viewing they can be moved to the analysis/summary 📁 using
 `mv rRNA_maturation/rebasecalling/sequencing_summary.txt rRNA_maturation/analysis/summary/sequencing_summary.txt`
 
 #### Demultiplexing of basecalled reads using `guppy_barcoder`
@@ -405,7 +405,7 @@ the MD tag for calculating mapping identities. Alignment files were
 converted to BAM files, sorted and indexed using samtools (v.1.15.1).
 
 Files were mapped to the representative reference genomes (downloaded to
-genome 📁) from  
+genome 📂) from  
 - [*Haloferax
 volcanii*](https://www.ncbi.nlm.nih.gov/genome/?term=haloferax+volcanii)  
 - [*Sulfolobus
@@ -1317,7 +1317,7 @@ group_maps16 <- function(input,bc, myIdentity, myClip ){
     dplyr::filter(identity >= myIdentity, strand == "+") %>%
     dplyr::mutate(group = case_when((start >= m2 & start < m3 & end >= m3 & soft_l >= c1) ~ "(01) 5_extended_16S",
                                     (start >= m2 & start < m3 & end >= m3 & soft_l < c1) ~ "(02) post-16S-bhb",
-                                    (start <= m1 & end >= m3) ~ "(03) circ_16S",
+                                    (start <= m1 & end >= m3+5) ~ "(03) circ_16S",
                                     (start <= m1 & end >= m2 & end < m3 & soft_r < c1) ~ "(04) open_circ_16S_5",
                                     (start <= m1 & end >= m1 & end <= m2 & soft_r < c1) ~ "(05) open_circ_16S_cutBHB3",
                                     (end <= m1 & soft_r <= c1 & soft_l < 2000) ~ "(06) mature_16S",
