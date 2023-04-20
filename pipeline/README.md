@@ -13,65 +13,65 @@ Nanopore RNA-seq data, including:
 
 #### Table of Contents
 
--   <a href="#library-preparation" id="toc-library-preparation">Library
-    preparation</a>
-    -   <a href="#direct-rna" id="toc-direct-rna">Direct RNA</a>
-    -   <a href="#direct-cdna" id="toc-direct-cdna">Direct cDNA</a>
--   <a href="#sequencing" id="toc-sequencing">Sequencing</a>
--   <a href="#data-analysis" id="toc-data-analysis">Data analysis</a>
-    -   <a href="#data-management" id="toc-data-management">Data management</a>
-    -   <a
-        href="#basecalling-demultiplexing-and-trimming-of-direct-rna-libraries"
-        id="toc-basecalling-demultiplexing-and-trimming-of-direct-rna-libraries">Basecalling,
-        demultiplexing and trimming of direct RNA libraries</a>
-        -   <a href="#demulitplexing-using-poreplex"
-            id="toc-demulitplexing-using-poreplex">Demulitplexing using
-            <span><code>poreplex</code></span></a>
-        -   <a href="#basecalling-using-guppy"
-            id="toc-basecalling-using-guppy">Basecalling using
-            <code>guppy</code></a>
-        -   <a href="#polya-trimming-using-cutadapt"
-            id="toc-polya-trimming-using-cutadapt">Poly(A)-trimming using
-            <span>cutadapt</span></a>
-    -   <a
-        href="#basecalling-demultiplexing-and-trimming-of-direct-cdna-libraries"
-        id="toc-basecalling-demultiplexing-and-trimming-of-direct-cdna-libraries">Basecalling,
-        demultiplexing and trimming of direct cDNA libraries</a>
-        -   <a href="#basecalling-using-guppy-1"
-            id="toc-basecalling-using-guppy-1">Basecalling using
-            <code>guppy</code></a>
-        -   <a href="#demultiplexing-of-basecalled-reads-using-guppy_barcoder"
-            id="toc-demultiplexing-of-basecalled-reads-using-guppy_barcoder">Demultiplexing
-            of basecalled reads using <code>guppy_barcoder</code></a>
-        -   <a
-            href="#read-orientation-and-detection-of-full-length-sequenced-reads-using-pychopper"
-            id="toc-read-orientation-and-detection-of-full-length-sequenced-reads-using-pychopper">Read
-            orientation and detection of full-length sequenced reads using
-            <span><code>pychopper</code></span></a>
-    -   <a href="#read-alignment-using-minimap2"
-        id="toc-read-alignment-using-minimap2">Read alignment using
-        <span><code>minimap2</code></span></a>
-    -   <a href="#analysis-of-coverage-files"
-        id="toc-analysis-of-coverage-files">Analysis of coverage files</a>
-        -   <a href="#calculation" id="toc-calculation">Calculation</a>
-        -   <a href="#plotting" id="toc-plotting">Plotting</a>
-    -   <a href="#quality-control" id="toc-quality-control">Quality control</a>
-    -   <a
-        href="#detection-of-rrna-processing-sites-and-classification-of-rrna-intermediates"
-        id="toc-detection-of-rrna-processing-sites-and-classification-of-rrna-intermediates">Detection
-        of rRNA processing sites and classification of rRNA intermediates</a>
-    -   <a href="#circular-rna-detection"
-        id="toc-circular-rna-detection">Circular RNA detection</a>
-    -   <a href="#modified-base-detection"
-        id="toc-modified-base-detection">Modified base detection</a>
-        -   <a href="#stage-processing" id="toc-stage-processing">Stage
-            processing</a>
-        -   <a href="#stage-sorting" id="toc-stage-sorting">Stage sorting</a>
-        -   <a href="#esb-calculation" id="toc-esb-calculation">ESB calculation</a>
-        -   <a href="#eligos2" id="toc-eligos2">Eligos2</a>
-        -   <a href="#modified-base-detection-based-on-signal-data"
-            id="toc-modified-base-detection-based-on-signal-data">Modified base
-            detection based on signal data</a>
+- <a href="#library-preparation" id="toc-library-preparation">Library
+  preparation</a>
+  - <a href="#direct-rna" id="toc-direct-rna">Direct RNA</a>
+  - <a href="#direct-cdna" id="toc-direct-cdna">Direct cDNA</a>
+- <a href="#sequencing" id="toc-sequencing">Sequencing</a>
+- <a href="#data-analysis" id="toc-data-analysis">Data analysis</a>
+  - <a href="#data-management" id="toc-data-management">Data management</a>
+  - <a
+    href="#basecalling-demultiplexing-and-trimming-of-direct-rna-libraries"
+    id="toc-basecalling-demultiplexing-and-trimming-of-direct-rna-libraries">Basecalling,
+    demultiplexing and trimming of direct RNA libraries</a>
+    - <a href="#demulitplexing-using-poreplex"
+      id="toc-demulitplexing-using-poreplex">Demulitplexing using
+      <code>poreplex</code></a>
+    - <a href="#basecalling-using-guppy"
+      id="toc-basecalling-using-guppy">Basecalling using
+      <code>guppy</code></a>
+    - <a href="#polya-trimming-using-cutadapt"
+      id="toc-polya-trimming-using-cutadapt">Poly(A)-trimming using
+      cutadapt</a>
+  - <a
+    href="#basecalling-demultiplexing-and-trimming-of-direct-cdna-libraries"
+    id="toc-basecalling-demultiplexing-and-trimming-of-direct-cdna-libraries">Basecalling,
+    demultiplexing and trimming of direct cDNA libraries</a>
+    - <a href="#basecalling-using-guppy-1"
+      id="toc-basecalling-using-guppy-1">Basecalling using
+      <code>guppy</code></a>
+    - <a href="#demultiplexing-of-basecalled-reads-using-guppy_barcoder"
+      id="toc-demultiplexing-of-basecalled-reads-using-guppy_barcoder">Demultiplexing
+      of basecalled reads using <code>guppy_barcoder</code></a>
+    - <a
+      href="#read-orientation-and-detection-of-full-length-sequenced-reads-using-pychopper"
+      id="toc-read-orientation-and-detection-of-full-length-sequenced-reads-using-pychopper">Read
+      orientation and detection of full-length sequenced reads using
+      <code>pychopper</code></a>
+  - <a href="#read-alignment-using-minimap2"
+    id="toc-read-alignment-using-minimap2">Read alignment using
+    <code>minimap2</code></a>
+  - <a href="#analysis-of-coverage-files"
+    id="toc-analysis-of-coverage-files">Analysis of coverage files</a>
+    - <a href="#calculation" id="toc-calculation">Calculation</a>
+    - <a href="#plotting" id="toc-plotting">Plotting</a>
+  - <a href="#quality-control" id="toc-quality-control">Quality control</a>
+  - <a
+    href="#detection-of-rrna-processing-sites-and-classification-of-rrna-intermediates"
+    id="toc-detection-of-rrna-processing-sites-and-classification-of-rrna-intermediates">Detection
+    of rRNA processing sites and classification of rRNA intermediates</a>
+  - <a href="#circular-rna-detection"
+    id="toc-circular-rna-detection">Circular RNA detection</a>
+  - <a href="#modified-base-detection"
+    id="toc-modified-base-detection">Modified base detection</a>
+    - <a href="#stage-processing" id="toc-stage-processing">Stage
+      processing</a>
+    - <a href="#stage-sorting" id="toc-stage-sorting">Stage sorting</a>
+    - <a href="#esb-calculation" id="toc-esb-calculation">ESB calculation</a>
+    - <a href="#eligos2" id="toc-eligos2">Eligos2</a>
+    - <a href="#modified-base-detection-based-on-signal-data"
+      id="toc-modified-base-detection-based-on-signal-data">Modified base
+      detection based on signal data</a>
 
 ------------------------------------------------------------------------
 
@@ -248,7 +248,7 @@ cat ${ext_dir}/analysis/cutadapt_fastq/hvo_notex_dksga/*.fastq > ${ext_dir}/anal
 #### Basecalling using `guppy`
 
 After sequencing (and despite live-basecalling) all datasets in the
-raw_FAST5 📁 were re-basecalled using `guppy` (v. 6.3.2+bb5453e) in
+raw_FAST5 📂 were re-basecalled using `guppy` (v. 6.3.2+bb5453e) in
 high-accuracy mode with a q-score cutoff of 7. Next, basecalled files
 were demultiplexed using the `guppy_barcoder` command from the `guppy`
 suite (available in the [ONT community](https://nanoporetech.com) using
@@ -280,12 +280,12 @@ guppy_basecaller \
 
 Using the selected options `guppy` produces fast5_pass, fast5_fail,
 fastq_pass, fastq_fail, summary and report files that are written to the
-rebasecallling 📂. Multiple FASTQs can be merged using
+rebasecallling 📁. Multiple FASTQs can be merged using
 `cat rRNA_maturation/rebasecallling/*.fastq > rRNA_maturation/rebasecallling/run_id.fastq`.
 
 Sequencing summary files are also written to the rebasecallling 📂 and
 are used during the quality control of the runs and reads. For better
-viewing they can be moved to the analysis/summary 📁 using
+viewing they can be moved to the analysis/summary 📂 using
 `mv rRNA_maturation/rebasecalling/sequencing_summary.txt rRNA_maturation/analysis/summary/sequencing_summary.txt`
 
 #### Demultiplexing of basecalled reads using `guppy_barcoder`
@@ -321,11 +321,11 @@ guppy_barcoder \
 --barcode_kits 'EXP-NBD104' 
 ```
 
-Multiple FASTQs are written to the demultiplexing 📁 and can be merged
+Multiple FASTQs are written to the demultiplexing 📂 and can be merged
 with
 e.g. `cat rRNA_maturation/demultiplexing/pass/barcode01/*.fastq > rRNA_maturation/analysis/fastq_pass/barcode01.fastq`.
 Barcode summary files are written to the rRNA_maturation/demultiplexing
-📂 and can be moved to the rRNA_maturation/analysis/summary 📂.
+📁 and can be moved to the rRNA_maturation/analysis/summary 📁.
 
 #### Read orientation and detection of full-length sequenced reads using [`pychopper`](https://github.com/nanoporetech/pychopper)
 
@@ -1024,6 +1024,14 @@ comb_map %>%
   scale_fill_manual(values = rev(c("#CFCFCF", "#916ECA","#D05FAD","#F2698B","#FD9E7E","#EDBA5E")), 
                     na.value = "white") 
 ```
+
+> Important
+
+Note that for classification of circular precursors (class 3) using
+direct RNA reads, the group_maps16 function was slightly modified to
+account for lower sequencing quality.
+`(start <= m1 & end >= m3) ~ "(03) circ_16S"`, was therefore replaced
+with `(start <= m1 & end >= m3+5) ~ "(03) circ_16S"`.
 
 ### Circular RNA detection
 
