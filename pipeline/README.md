@@ -248,12 +248,12 @@ cat ${ext_dir}/analysis/cutadapt_fastq/hvo_notex_dksga/*.fastq > ${ext_dir}/anal
 #### Basecalling using `guppy`
 
 After sequencing (and despite live-basecalling) all datasets in the
-raw_FAST5 📂 were re-basecalled using `guppy` (v. 6.3.2+bb5453e) in
+raw_FAST5 📁 were re-basecalled using `guppy` (v. 6.3.2+bb5453e) in
 high-accuracy mode with a q-score cutoff of 7. Next, basecalled files
 were demultiplexed using the `guppy_barcoder` command from the `guppy`
 suite (available in the [ONT community](https://nanoporetech.com) using
 default parameters). Demultiplexed files in FASTQ format were written to
-the fastq_pass 📁.
+the fastq_pass 📂.
 
 ``` bash
 # files
@@ -280,7 +280,7 @@ guppy_basecaller \
 
 Using the selected options `guppy` produces fast5_pass, fast5_fail,
 fastq_pass, fastq_fail, summary and report files that are written to the
-rebasecallling 📂. Multiple FASTQs can be merged using
+rebasecallling 📁. Multiple FASTQs can be merged using
 `cat rRNA_maturation/rebasecallling/*.fastq > rRNA_maturation/rebasecallling/run_id.fastq`.
 
 Sequencing summary files are also written to the rebasecallling 📁 and
@@ -325,7 +325,7 @@ Multiple FASTQs are written to the demultiplexing 📂 and can be merged
 with
 e.g. `cat rRNA_maturation/demultiplexing/pass/barcode01/*.fastq > rRNA_maturation/analysis/fastq_pass/barcode01.fastq`.
 Barcode summary files are written to the rRNA_maturation/demultiplexing
-📁 and can be moved to the rRNA_maturation/analysis/summary 📁.
+📁 and can be moved to the rRNA_maturation/analysis/summary 📂.
 
 #### Read orientation and detection of full-length sequenced reads using [`pychopper`](https://github.com/nanoporetech/pychopper)
 
@@ -1590,7 +1590,6 @@ done
 
 ``` r
 ### R ###
-
 # functions ----
 pile_esb_all <- function(input, grouptype){
   pile_base_all(input, grouptype) %>%  
@@ -1607,29 +1606,41 @@ pile_esb_all <- function(input, grouptype){
 }
 
 # data ----
-pileup_files <- list.files(paste0(dir,"pileups"), 
-                           recursive = T, pattern = "pileup.tsv", full.names = T)
-samples <- data.table(type = 1:3,
-                      name = str_remove_all(str_split_fixed(pileup_files, "/",9)[,8], "_pileup.tsv"))
-pile_esbs <- pmap_dfr(list(pileup_files[2:3],2:3),pile_esb_all) %>%
-  left_join(samples)
+pileup_files <- list.files(paste0(dir,"pileups/all"), 
+                           recursive = T, pattern = "pileup.tsv.gz$", full.names = T)
+samples <- data.table(type = 1:4,
+                      name = c("wt", "wt", "dksga", "dksga"),
+                      rep = c(1,2,1,2))
+
+## calc stats ====
+pile_esbs <- pmap_dfr(list(pileup_files_f[c(1:4)],1:4),pile_esb_all) %>%
+  left_join(samples) 
+
+
+### Figure 6 C ####
+pil_3c <- pile_esbs %>%
+  dplyr::filter(total > 500,
+                pos %in% (hvo_gff_rrna$start_feature[1]+13):(hvo_gff_rrna$end_feature[1]-8)) %>%
+  group_by(pos, name) %>%
+  summarise(mean_frac = mean(frac)) %>%
+  pivot_wider(names_from = name, values_from = mean_frac) %>%
+  drop_na() %>%
+  dplyr::mutate(quot = (wt/dksga)) %>%
+  dplyr::filter(!is.na(quot)) %>% 
+  ungroup()
 
 # plotting ----
-ggplot(data = pile_esbs %>%
-         dplyr::select(pos, frac, name) %>%
-         pivot_wider(names_from = name, values_from = frac) %>%
-         drop_na() %>%
-         dplyr::mutate(quot = (hvo_notex/hvo_notex_dksga)) %>%
-         dplyr::filter(!is.na(quot)) %>% 
-         ungroup(),
+ggplot(data = pil_3c,
        aes(x = pos, y = (quot))) +
   geom_line() +
   geom_area() +
   theme_pubclean() +
   ylab("") +
-  geom_vline(xintercept = c(hvo_gff_rrna$start_feature[1],
+  geom_vline(xintercept = c(hvo_gff_rrna$start_feature[1]+13,
                             hvo_gff_rrna$end_feature[1]-8),
-             linetype = "dashed")
+             linetype = "dashed") +
+  geom_hline(yintercept = c(1)) +
+  scale_y_continuous(limits = c(0,10))
 ```
 
 #### Eligos2
@@ -1664,10 +1675,10 @@ Next, Eligos2 was performed according to the description at
 ## Index reference sequence
 samtools faidx hvo.fasta
 
-## Run ELIGOS compare between samples when Wild-type (-tbam) and Knock-out (-cbam)
+## Run ELIGOS compare between samples when Wild-type (-tbam) and Knock-out (-cbam) for all pairwise comparisons
 eligos2 pair_diff_mod \
-  -tbam hvo_wt.sorted.bam \
-  -cbam hvo_dksga.sorted.bam \
+  -tbam hvo_wt_replicate1.sorted.bam hvo_wt_replicate2.sorted.bam \
+  -cbam hvo_dksga_replicate1.sorted.bam hvo_dksga_replicate2.sorted.bam \
   -reg ksga_data/hvo_16S.bed \
   -ref ksga_data/hvo.fasta \
   --oddR 0 \
@@ -1703,36 +1714,64 @@ base_annotation <- function(coord_left, coord_right, fasta_file){
 ext_dir <- "/...eligos_output"
 
 ## eligos data ====
-f_t <- pmap_dfr(list(1:6),read_in_eli)
+eligos_f <- list.files(dir,
+                      recursive = T, pattern = "_combine.txt", full.names = T)
+eligos_samples <- data.table(type = 1:length(eligos_f),
+                             precursor = str_remove_all(str_split_fixed(eligos_f, "\\/", 8)[,7], "_new"),
+                             rep_wt = str_remove_all(str_split_fixed(str_split_fixed(eligos_f, "\\/", 8)[,8],".sorted",2)[,1], "bc_"),
+                             rep_dksga = str_remove_all(str_split_fixed(str_split_fixed(eligos_f, "\\/", 8)[,8],"\\.",4)[,2], "sorted_vs_bc_"))
+
+eligos_frame <- pmap_dfr(list(eligos_f,1:nrow(eligos_samples)), read_in_eli) %>%
+  left_join(eligos_samples) 
 
 ## genome ====
 hvo_gff_rRNA   <- read_in_gff_rrna(paste0(dir, "/genome/hvo.gff")) 
 interesting_postions_hvo <- c(1598192+910, 1598192+1352, 1598192+1432, 1598192+1450,1598192+1451, 1598192+1442)
 
-
 ## filter for interesting region ====
-eligos_t <- f_t %>%
-  group_by(pre) %>%
-  complete(end_loc = full_seq(hvo_gff_rRNA$start_feature[1]:hvo_gff_rRNA$end_feature[1], period = 1), 
-           fill = list(oddR = 0, adjPval = 1)) %>%
-  dplyr::mutate(oddR = ifelse(is.na(homo_seq), oddR,
-                              ifelse(oddR == "Inf", 400, 
-                                     ifelse(total_reads < 5, 0, oddR))))
-                adjPval = ifelse(is.na(homo_seq), adjPval,
-                                 ifelse(homo_seq != "--" | total_reads < 5, 1, adjPval)))
+eligos_frame_f <- eligos_frame %>%
+  dplyr::rename(pos = end_loc) %>% 
+  dplyr::select(pos, oddR, adjPval, total_reads, precursor, rep_wt, rep_dksga) 
+eligos_frame_f2 <- eligos_frame_f %>%
+  dplyr::mutate(oddR = ifelse(oddR == Inf, 0, oddR)) %>%
+  group_by(precursor,pos) %>%
+  mutate(adjPval_BH = p.adjust(adjPval, method = "BH")) %>%
+  summarize(mean_oddR = weighted.mean(oddR,w = total_reads, na.rm = T),
+            signif = sum(adjPval_BH < 0.01)/n())
+
+## e.g. H45 ====
+set_p <- 20
+int_p <- 4
+int_seq <- base_annotation(coord_left = (interesting_postions_hvo[int_p]-set_p), 
+                           coord_right = (interesting_postions_hvo[int_p]+set_p),
+                           fasta_file = here("data/genome/hvo.fasta"))
+ 
+eligos_frame_f3 <-  eligos_frame_f2 %>%
+  dplyr::filter(pos > interesting_postions_hvo[int_p]-set_p,
+                pos < interesting_postions_hvo[int_p]+set_p) %>%
+  group_by(precursor) %>%
+  complete(pos = full_seq(pos,1), 
+           fill = list(mean_oddR = 0, signif = 0)) %>%
+  group_by(pos, precursor) %>%
+  dplyr::mutate(lower = 0,
+                upper = max(mean_oddR, na.rm = T))
+
 # plotting ----
-ggplot(data = eligos_t, 
-       aes(x = end_loc, y = oddR, fill = adjPval < 0.05)) +
-  facet_grid(rows = vars(pre)) +
-  scale_fill_manual(values = rev(c("#B293F4","#D3D3D3"))) +
-  scale_color_manual(values = rev(c("#B293F4","#D3D3D3"))) +
-  geom_line(size = 1, alpha = 1) +
+ggplot(data = eligos_frame_f3,
+       aes(x = pos, y = mean_oddR,group = precursor, 
+           fill = signif == 1)) +
+  facet_grid(rows = vars(precursor)) +
+  scale_fill_manual(values = c("#D3D3D3","#B293F4")) +
+  geom_ribbon(aes(min = lower, ymax = upper), 
+              fill = "grey85") +
+  geom_line(size = 1, color = "black") +
   geom_point(shape = 21, color = "black", size = 1.5) +
   coord_cartesian(xlim = c(1599642-13, 1599642+13)) +
   scale_x_continuous(breaks = (1599642-13):(1599642+13),
                      labels = strsplit(as.character(hvo_fasta$chr[(1599642-13):(1599642+13)]),"*")[[1]]) +
+  scale_y_continuous(limits = c(0,50)) +
   theme_pubclean() +
-  ylab("oddR") +
+  ylab("Odds ratio") +
   theme(panel.grid.major.x = element_blank(),
         panel.grid.minor.x = element_blank(),
         panel.grid.minor.y = element_blank())
